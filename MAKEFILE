@@ -1,0 +1,37 @@
+CC = gcc
+CFLAGS ?= -std=c11 -Wall -Wextra -Iinclude
+LDFLAGS ?= -lws2_32
+
+CLIENT_EXE = client.exe
+SERVER_EXE = server.exe
+
+LIB_DIR = lib
+
+CLIENT_OBJS = $(LIB_DIR)/socketutil.o client.o
+SERVER_OBJS = $(LIB_DIR)/socketutil.o server.o
+
+.PHONY: all clean
+
+all: $(CLIENT_EXE) $(SERVER_EXE)
+
+$(LIB_DIR):
+	-@mkdir $(LIB_DIR)
+
+$(CLIENT_EXE): $(CLIENT_OBJS)
+	$(CC) $(CLIENT_OBJS) $(LDFLAGS) -o $@
+
+$(SERVER_EXE): $(SERVER_OBJS)
+	$(CC) $(SERVER_OBJS) $(LDFLAGS) -o $@
+
+$(LIB_DIR)/socketutil.o: src/utils/socketutil.c include/socketutil.h | $(LIB_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+client.o: src/client/client.c include/socketutil.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+server.o: src/server/server.c include/socketutil.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	-@del /q client.o server.o $(CLIENT_EXE) $(SERVER_EXE) 2>nul
+	-@rmdir /s /q $(LIB_DIR) 2>nul
