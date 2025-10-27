@@ -23,5 +23,6 @@ socket_t create_socket(void);
 int createIPv4Adress_getaddrinfo(const char *hostname, const char *port, struct addrinfo **result);
 struct sockaddr_in* createIPv4Address(const char* ip, int port);
 void print_last_error(const char *label);
+void print_socket_info(socket_t sockfd);
 void clean_and_exit(struct addrinfo* addrinfo_result, struct sockaddr_in* sockaddr_result, socket_t sockfd, int exit_code);
 #endif // SOCKETUTIL_H

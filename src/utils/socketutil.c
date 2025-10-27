@@ -5,6 +5,28 @@ void print_last_error(const char *label)
     fprintf(stderr, "%s failed with error: %d\n", label, WSAGetLastError());
 }
 
+void print_socket_info(socket_t sockfd)
+{
+    struct sockaddr_in addr;
+    int addrlen = sizeof(addr);
+    
+    if (getsockname(sockfd, (struct sockaddr*)&addr, &addrlen) == 0) {
+        char ip_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &addr.sin_addr, ip_str, INET_ADDRSTRLEN);
+        printf("  Local address: %s:%d\n", ip_str, ntohs(addr.sin_port));
+    } else {
+        print_last_error("getsockname");
+    }
+    
+    if (getpeername(sockfd, (struct sockaddr*)&addr, &addrlen) == 0) {
+        char ip_str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &addr.sin_addr, ip_str, INET_ADDRSTRLEN);
+        printf("  Remote address: %s:%d\n", ip_str, ntohs(addr.sin_port));
+    } else {
+        print_last_error("getpeername");
+    }
+}
+
 socket_t create_socket(void)
 {
     socket_t sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

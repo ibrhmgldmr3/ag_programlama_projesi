@@ -1,5 +1,34 @@
 #include <socketutil.h>
 
+static void* receive_messages(void* arg)
+{
+    socket_t sockfd = *(socket_t*)arg;
+    char buffer[BUFFER_SIZE];
+
+    while (true)
+    {
+        int received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+        if (received > 0)
+        {
+            buffer[received] = '\0';
+            printf("\nMessage from server: %s\n", buffer);
+            printf("Enter message to send(type \"exit\" to exit):\n");
+        }
+        else if (received == 0)
+        {
+            printf("\nServer closed the connection.\n");
+            break;
+        }
+        else
+        {
+            print_last_error("recv");
+            break;
+        }
+    }
+
+    return NULL;
+}
+
 int main()
 {
 
@@ -37,6 +66,16 @@ int main()
     }
     printf("Connected to %s:%d\n", ip, port);
     
+    pthread_t receiverThread;
+    int threadErr = pthread_create(&receiverThread, NULL, receive_messages, &socketFD);
+    if (threadErr != 0)
+    {
+        fprintf(stderr, "Failed to create receiver thread: %d\n", threadErr);
+        free(addrinfo_result);
+        closesocket(socketFD);
+        WSACleanup();
+        return EXIT_FAILURE;
+    }
 
     char line[BUFFER_SIZE];
     printf("Enter message to send(type \"exit\" to exit):\n");
@@ -60,6 +99,11 @@ int main()
         {
             break;
         }
+        // #can you send data and the info of the client socket
+        printf("Sending data to %s:%d\n", ip, port);
+        printf("Client socket info:\n");
+        print_socket_info(socketFD);
+
         size_t total_sent = 0;
         while (total_sent < charCount)
         {
@@ -68,6 +112,8 @@ int main()
             {
                 print_last_error("send");
                 free(addrinfo_result);
+                shutdown(socketFD, SD_BOTH);
+                pthread_join(receiverThread, NULL);
                 closesocket(socketFD);
                 WSACleanup();
                 return EXIT_FAILURE;
@@ -80,12 +126,12 @@ int main()
 
     printf("Exiting...\n");
 
+    shutdown(socketFD, SD_BOTH);
+    pthread_join(receiverThread, NULL);
+
     printf("\n");
     free(addrinfo_result);
     closesocket(socketFD);
     WSACleanup();
     return EXIT_SUCCESS;
 }
-
-
-
